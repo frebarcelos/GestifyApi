@@ -1,0 +1,6 @@
+@GestifyApi_HostAddress = http://localhost:5145
+
+GET {{GestifyApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
