@@ -5,9 +5,11 @@ using GestifyApi.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class TagsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
