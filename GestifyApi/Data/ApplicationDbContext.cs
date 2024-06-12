@@ -14,7 +14,7 @@ namespace GestifyApi.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<Status> Statuses { get; set; }
         public DbSet<Priority> Priorities { get; set; }
-        public DbSet<TaskModel> Tasks { get; set; } // Usando alias aqui também
+        public DbSet<TaskModel> Tasks { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<TaskTag> TaskTags { get; set; }

@@ -1,5 +1,5 @@
-﻿namespace GestifyApi.Models {
-
+﻿namespace GestifyApi.Models
+{
     public class TaskModel
     {
         public int ID { get; set; }
@@ -15,5 +15,6 @@
         public User User { get; set; }
         public int CategoryID { get; set; }
         public Category Category { get; set; }
+        public ICollection<TaskTag> TaskTags { get; set; }  
     }
 }

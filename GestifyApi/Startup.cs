@@ -1,10 +1,6 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using GestifyApi.Data;
 using Microsoft.EntityFrameworkCore;
-using GestifyApi.Data;  // Certifique-se de que este namespace está correto
+using Microsoft.OpenApi.Models;
 
 public class Startup
 {
@@ -20,9 +16,14 @@ public class Startup
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseMySql(
                 Configuration.GetConnectionString("DefaultConnection"),
-                new MySqlServerVersion(new Version(8, 0, 21)) // Ajuste a versão do servidor MySQL conforme necessário
+                new MySqlServerVersion(new Version(8, 0, 21))
             ));
         services.AddControllers();
+
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gestify API", Version = "v1" });
+        });
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -30,6 +31,13 @@ public class Startup
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Gestify API V1");
+                c.RoutePrefix = string.Empty; 
+            });
         }
         else
         {
