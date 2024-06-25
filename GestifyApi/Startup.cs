@@ -1,14 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+﻿using GestifyApi.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using GestifyApi.Data;
 
 public class Startup
 {
@@ -21,8 +16,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        string connectionString = Configuration["ConnectionStrings:DefaultConnection"];
-
+        string connectionString = Configuration.GetConnectionString("DefaultConnection");
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseMySql(
                 connectionString,
@@ -31,33 +25,36 @@ public class Startup
 
         services.AddControllers();
 
-        string issuer = Configuration["Jwt:Issuer"];
-        string key = Configuration["Jwt:Key"];
+        services.AddHttpContextAccessor();
 
-        if (string.IsNullOrEmpty(issuer) || string.IsNullOrEmpty(key))
-        {
-            throw new ArgumentNullException("JWT Issuer and Key must be provided.");
-        }
+        var key = Encoding.ASCII.GetBytes(Configuration["Jwt:Key"]);
 
-        services.AddAuthentication(options =>
+        services.AddAuthentication(x =>
         {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         })
-        .AddJwtBearer(options =>
+        .AddJwtBearer(x =>
         {
-            options.RequireHttpsMetadata = false;
-            options.SaveToken = true;
-            options.TokenValidationParameters = new TokenValidationParameters
+            x.RequireHttpsMetadata = false;
+            x.SaveToken = true;
+            x.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = issuer,
-                ValidAudience = issuer,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false
             };
+        });
+
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowSpecificOrigins",
+                builder => builder
+                    .WithOrigins("http://localhost:3000", "https://gestify.vercel.app")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+            );
         });
 
         services.AddSwaggerGen(c =>
@@ -73,19 +70,19 @@ public class Startup
                 Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
             });
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
             {
+                new OpenApiSecurityScheme
                 {
-                    new OpenApiSecurityScheme
+                    Reference = new OpenApiReference
                     {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    new string[] {}
-                }
-            });
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                new string[] {}
+            }
+        });
         });
     }
 
@@ -94,7 +91,6 @@ public class Startup
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
-
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
@@ -110,11 +106,16 @@ public class Startup
 
         app.UseHttpsRedirection();
         app.UseRouting();
+
+        app.UseCors("AllowSpecificOrigins"); // Aplicar a política CORS
+
         app.UseAuthentication();
         app.UseAuthorization();
+
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
         });
     }
+
 }

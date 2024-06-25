@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -13,10 +14,12 @@ using Microsoft.AspNetCore.Authorization;
 public class CategoriesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CategoriesController(ApplicationDbContext context)
+    public CategoriesController(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     // GET: api/Categories
@@ -74,6 +77,20 @@ public class CategoriesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Category>> PostCategory(Category category)
     {
+        var userIdClaim = _httpContextAccessor.HttpContext.User.FindFirst("UserID");
+
+        if (userIdClaim == null)
+        {
+            return Unauthorized("User ID not found in token");
+        }
+
+        if (!int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return BadRequest("Invalid User ID in token");
+        }
+
+        category.UserID = userId;
+
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
 

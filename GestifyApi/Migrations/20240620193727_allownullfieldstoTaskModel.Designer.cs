@@ -4,6 +4,7 @@ using GestifyApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestifyApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240620193727_allownullfieldstoTaskModel")]
+    partial class allownullfieldstoTaskModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -125,7 +128,43 @@ namespace GestifyApi.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("GestifyApi.Models.TaskModel", b =>
+            modelBuilder.Entity("GestifyApi.Models.TaskTag", b =>
+                {
+                    b.Property<int>("TaskID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TagID")
+                        .HasColumnType("int");
+
+                    b.HasKey("TaskID", "TagID");
+
+                    b.HasIndex("TagID");
+
+                    b.ToTable("TaskTags");
+                });
+
+            modelBuilder.Entity("GestifyApi.Models.User", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("TaskModel", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
@@ -172,42 +211,6 @@ namespace GestifyApi.Migrations
                     b.ToTable("Tasks");
                 });
 
-            modelBuilder.Entity("GestifyApi.Models.TaskTag", b =>
-                {
-                    b.Property<int>("TaskID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TagID")
-                        .HasColumnType("int");
-
-                    b.HasKey("TaskID", "TagID");
-
-                    b.HasIndex("TagID");
-
-                    b.ToTable("TaskTags");
-                });
-
-            modelBuilder.Entity("GestifyApi.Models.User", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("ID");
-
-                    b.ToTable("Users");
-                });
-
             modelBuilder.Entity("GestifyApi.Models.Category", b =>
                 {
                     b.HasOne("GestifyApi.Models.User", "User")
@@ -221,7 +224,7 @@ namespace GestifyApi.Migrations
 
             modelBuilder.Entity("GestifyApi.Models.Comment", b =>
                 {
-                    b.HasOne("GestifyApi.Models.TaskModel", "Task")
+                    b.HasOne("TaskModel", "Task")
                         .WithMany()
                         .HasForeignKey("TaskID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -238,7 +241,26 @@ namespace GestifyApi.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("GestifyApi.Models.TaskModel", b =>
+            modelBuilder.Entity("GestifyApi.Models.TaskTag", b =>
+                {
+                    b.HasOne("GestifyApi.Models.Tag", "Tag")
+                        .WithMany("TaskTags")
+                        .HasForeignKey("TagID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskModel", "Task")
+                        .WithMany("TaskTags")
+                        .HasForeignKey("TaskID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tag");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("TaskModel", b =>
                 {
                     b.HasOne("GestifyApi.Models.Category", "Category")
                         .WithMany()
@@ -267,31 +289,12 @@ namespace GestifyApi.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("GestifyApi.Models.TaskTag", b =>
-                {
-                    b.HasOne("GestifyApi.Models.Tag", "Tag")
-                        .WithMany("TaskTags")
-                        .HasForeignKey("TagID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GestifyApi.Models.TaskModel", "Task")
-                        .WithMany("TaskTags")
-                        .HasForeignKey("TaskID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tag");
-
-                    b.Navigation("Task");
-                });
-
             modelBuilder.Entity("GestifyApi.Models.Tag", b =>
                 {
                     b.Navigation("TaskTags");
                 });
 
-            modelBuilder.Entity("GestifyApi.Models.TaskModel", b =>
+            modelBuilder.Entity("TaskModel", b =>
                 {
                     b.Navigation("TaskTags");
                 });
