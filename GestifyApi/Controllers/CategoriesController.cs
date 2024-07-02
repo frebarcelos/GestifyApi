@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using MySqlConnector;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -43,6 +44,28 @@ public class CategoriesController : ControllerBase
         return category;
     }
 
+    // GET: api/Categories/UserCategories
+    [HttpGet("UserCategories")]
+    public async Task<ActionResult<IEnumerable<Category>>> GetUserCategories()
+    {
+        var userIdClaim = _httpContextAccessor.HttpContext.User.FindFirst("UserID");
+        if (userIdClaim == null)
+        {
+            return Unauthorized("User ID not found in token");
+        }
+
+        if (!int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return BadRequest("Invalid User ID in token");
+        }
+
+        var categories = await _context.Categories
+                                       .Where(c => c.UserID == userId)
+                                       .ToListAsync();
+
+        return Ok(categories);
+    }
+
     // PUT: api/Categories/5
     [HttpPut("{id}")]
     public async Task<IActionResult> PutCategory(int id, Category category)
@@ -52,7 +75,23 @@ public class CategoriesController : ControllerBase
             return BadRequest();
         }
 
-        _context.Entry(category).State = EntityState.Modified;
+        // Verifique se a categoria existe
+        if (!CategoryExists(id))
+        {
+            return NotFound();
+        }
+
+        // Recupera a categoria do banco de dados
+        var existingCategory = await _context.Categories.FindAsync(id);
+        if (existingCategory == null)
+        {
+            return NotFound();
+        }
+
+        // Atualiza apenas o nome da categoria
+        existingCategory.CategoryName = category.CategoryName;
+
+        _context.Entry(existingCategory).State = EntityState.Modified;
 
         try
         {
@@ -68,6 +107,24 @@ public class CategoriesController : ControllerBase
             {
                 throw;
             }
+        }
+        catch (DbUpdateException dbEx)
+        {
+            // Log the error details
+            Console.WriteLine($"DbUpdateException: {dbEx.Message}");
+            if (dbEx.InnerException != null)
+            {
+                Console.WriteLine($"Inner Exception: {dbEx.InnerException.Message}");
+            }
+
+            // Check if the exception is due to foreign key constraint violation
+            if (dbEx.InnerException is MySqlException sqlEx &&
+                sqlEx.Number == 1452) // 1452 is the MySQL error code for foreign key constraint violation
+            {
+                return Conflict("Cannot update category due to foreign key constraint violation.");
+            }
+
+            throw;
         }
 
         return NoContent();

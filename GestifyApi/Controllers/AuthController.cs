@@ -26,6 +26,12 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register(User user)
     {
+        // Verificar se já existe um usuário com o mesmo nome de usuário
+        if (await _context.Users.AnyAsync(u => u.Username == user.Username))
+        {
+            return BadRequest("Nome de usuário já está em uso.");
+        }
+
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
         _context.Users.Add(user);
         await _context.SaveChangesAsync();

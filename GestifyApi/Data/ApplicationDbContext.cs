@@ -35,6 +35,7 @@ namespace GestifyApi.Data
                 .HasOne(tt => tt.Tag)
                 .WithMany(t => t.TaskTags)
                 .HasForeignKey(tt => tt.TagID);
+
         }
     }
 }
